@@ -1,14 +1,6 @@
 // API Configuration
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-// API key will be injected by server or set directly
-const API_KEY = (() => {
-    // Try to get from window if injected by server
-    if (typeof window !== 'undefined' && window.OPENROUTER_API_KEY && window.OPENROUTER_API_KEY !== '{{ OPENROUTER_API_KEY }}') {
-        return window.OPENROUTER_API_KEY;
-    }
-    // Fallback: replace this with your actual API key for testing
-    return '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';
-})();
+const API_KEY = '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'; // direct key for testing
 
 // DOM Elements
 const form = document.getElementById('giftForm');
@@ -25,28 +17,20 @@ const errorMessage = document.getElementById('errorMessage');
 // State Management
 let currentFormData = null;
 
-// Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
-    feather.replace(); // Initialize Feather icons
+    feather.replace();
 });
 
-/**
- * Initialize all event listeners
- */
 function initializeEventListeners() {
     form.addEventListener('submit', handleFormSubmit);
     newSearchBtn.addEventListener('click', showQuestionnaire);
     retryBtn.addEventListener('click', handleRetry);
 }
 
-/**
- * Handle form submission
- */
 async function handleFormSubmit(event) {
     event.preventDefault();
-    
-    // Get form data
+
     const formData = new FormData(form);
     currentFormData = {
         age: formData.get('age'),
@@ -56,20 +40,15 @@ async function handleFormSubmit(event) {
         budget: formData.get('budget')
     };
 
-    // Validate form data
     if (!validateFormData(currentFormData)) {
         showError('Please fill in all required fields.');
         return;
     }
 
-    // Show loading state
     showLoading();
 
     try {
-        // Generate gift recommendations
         const recommendations = await generateGiftRecommendations(currentFormData);
-        
-        // Display results
         displayResults(recommendations);
     } catch (err) {
         console.error('Error generating recommendations:', err);
@@ -77,30 +56,12 @@ async function handleFormSubmit(event) {
     }
 }
 
-/**
- * Validate form data
- */
 function validateFormData(data) {
     return data.age && data.occasion && data.interests && data.relationship && data.budget;
 }
 
-/**
- * Generate gift recommendations using OpenRouter API
- */
 async function generateGiftRecommendations(formData) {
     const prompt = createPrompt(formData);
-    
-    const requestBody = {
-        model: "anthropic/claude-3-haiku", // Using a cost-effective model
-        messages: [
-            {
-                role: "user",
-                content: prompt
-            }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7
-    };
 
     const response = await fetch(OPENROUTER_API_URL, {
         method: 'POST',
@@ -110,7 +71,12 @@ async function generateGiftRecommendations(formData) {
             'HTTP-Referer': window.location.origin,
             'X-Title': 'AI Gift Recommender'
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({
+            model: "anthropic/claude-3-haiku",
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: 1000,
+            temperature: 0.7
+        })
     });
 
     if (!response.ok) {
@@ -119,7 +85,6 @@ async function generateGiftRecommendations(formData) {
     }
 
     const data = await response.json();
-    
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
         throw new Error('Invalid response format from API');
     }
@@ -128,9 +93,6 @@ async function generateGiftRecommendations(formData) {
     return parseRecommendations(content);
 }
 
-/**
- * Create a detailed prompt for the AI
- */
 function createPrompt(formData) {
     return `You are an expert gift consultant. Based on the following information about a gift recipient, provide exactly 4 personalized gift recommendations.
 
@@ -162,252 +124,111 @@ Requirements:
 Return only the JSON response, no additional text.`;
 }
 
-/**
- * Parse AI response to extract recommendations
- */
 function parseRecommendations(content) {
     try {
-        // Try to extract JSON from the response
         const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            throw new Error('No JSON found in response');
-        }
-
+        if (!jsonMatch) throw new Error('No JSON found');
         const parsed = JSON.parse(jsonMatch[0]);
-        
-        if (!parsed.recommendations || !Array.isArray(parsed.recommendations)) {
-            throw new Error('Invalid recommendations format');
-        }
-
-        return parsed.recommendations.filter(rec => rec.title && rec.description);
-    } catch (err) {
-        console.error('Error parsing recommendations:', err);
-        
-        // Fallback: try to parse as plain text
+        return parsed.recommendations?.filter(r => r.title && r.description) || [];
+    } catch {
         return parseTextRecommendations(content);
     }
 }
 
-/**
- * Fallback parser for plain text responses
- */
 function parseTextRecommendations(content) {
-    const lines = content.split('\n').filter(line => line.trim());
+    const lines = content.split('\n').filter(Boolean);
     const recommendations = [];
-    
-    let currentTitle = '';
-    let currentDescription = '';
-    
+    let currentTitle = '', currentDescription = '';
     for (const line of lines) {
         const trimmed = line.trim();
-        
-        // Skip empty lines and JSON markers
-        if (!trimmed || trimmed === '{' || trimmed === '}' || trimmed.includes('"recommendations"')) {
-            continue;
-        }
-        
-        // Check if this looks like a title (short line, often numbered or with special formatting)
-        if (trimmed.length < 100 && (
-            /^\d+\./.test(trimmed) || 
-            /^[A-Z]/.test(trimmed) && !trimmed.includes('.') ||
-            trimmed.includes(':')
-        )) {
-            // Save previous recommendation if we have one
+        if (trimmed.length < 100 && (/^\d+\./.test(trimmed) || /^[A-Z]/.test(trimmed))) {
             if (currentTitle && currentDescription) {
-                recommendations.push({
-                    title: currentTitle.replace(/^\d+\.\s*/, '').replace(/:$/, ''),
-                    description: currentDescription.trim()
-                });
+                recommendations.push({ title: currentTitle, description: currentDescription });
             }
-            
-            currentTitle = trimmed;
+            currentTitle = trimmed.replace(/^\d+\.\s*/, '');
             currentDescription = '';
-        } else if (trimmed.length > 20) {
-            // This looks like a description
+        } else {
             currentDescription += (currentDescription ? ' ' : '') + trimmed;
         }
     }
-    
-    // Don't forget the last recommendation
-    if (currentTitle && currentDescription) {
-        recommendations.push({
-            title: currentTitle.replace(/^\d+\.\s*/, '').replace(/:$/, ''),
-            description: currentDescription.trim()
-        });
-    }
-    
-    // If we still don't have good recommendations, create generic ones
-    if (recommendations.length === 0) {
-        return [
-            {
-                title: "Personalized Gift Suggestion",
-                description: "Based on your preferences, consider a thoughtful gift that reflects their interests and fits your budget."
-            }
-        ];
-    }
-    
-    return recommendations.slice(0, 4); // Limit to 4 recommendations
+    if (currentTitle && currentDescription) recommendations.push({ title: currentTitle, description: currentDescription });
+    return recommendations.slice(0, 4);
 }
 
-/**
- * Display the gift recommendations
- */
 function displayResults(recommendations) {
     giftList.innerHTML = '';
-    
-    if (!recommendations || recommendations.length === 0) {
-        showError('No recommendations could be generated. Please try again with different preferences.');
+    if (!recommendations.length) {
+        showError('No recommendations could be generated.');
         return;
     }
-    
-    recommendations.forEach((gift, index) => {
-        const giftElement = createGiftElement(gift, index + 1);
-        giftList.appendChild(giftElement);
+    recommendations.forEach((gift, i) => {
+        const div = document.createElement('div');
+        div.className = 'gift-item';
+        div.style.animationDelay = `${i * 0.1}s`;
+        div.innerHTML = `<h3>${escapeHtml(gift.title)}</h3><p>${escapeHtml(gift.description)}</p>`;
+        giftList.appendChild(div);
     });
-    
     showResults();
 }
 
-/**
- * Create a gift recommendation element
- */
-function createGiftElement(gift, index) {
-    const div = document.createElement('div');
-    div.className = 'gift-item';
-    div.style.animationDelay = `${index * 0.1}s`;
-    
-    div.innerHTML = `
-        <h3>${escapeHtml(gift.title)}</h3>
-        <p>${escapeHtml(gift.description)}</p>
-    `;
-    
-    return div;
-}
-
-/**
- * Escape HTML to prevent XSS
- */
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-/**
- * Show different sections
- */
 function showQuestionnaire() {
-    hideAllSections();
-    questionnaire.classList.remove('hidden');
-    
-    // Reset form
-    form.reset();
-    currentFormData = null;
+    hideAllSections(); questionnaire.classList.remove('hidden');
+    form.reset(); currentFormData = null;
 }
 
 function showLoading() {
-    hideAllSections();
-    loading.classList.remove('hidden');
+    hideAllSections(); loading.classList.remove('hidden');
+    setButtonLoading(true);
 }
 
 function showResults() {
-    hideAllSections();
-    results.classList.remove('hidden');
+    hideAllSections(); results.classList.remove('hidden');
+    setButtonLoading(false);
 }
 
 function showError(message) {
-    hideAllSections();
-    errorMessage.textContent = message;
+    hideAllSections(); errorMessage.textContent = message;
     error.classList.remove('hidden');
+    setButtonLoading(false);
 }
 
 function hideAllSections() {
-    questionnaire.classList.add('hidden');
-    loading.classList.add('hidden');
-    results.classList.add('hidden');
-    error.classList.add('hidden');
+    [questionnaire, loading, results, error].forEach(el => el.classList.add('hidden'));
 }
 
-/**
- * Handle retry button click
- */
 function handleRetry() {
-    if (currentFormData) {
-        handleFormSubmitWithData(currentFormData);
-    } else {
-        showQuestionnaire();
-    }
+    currentFormData ? handleFormSubmitWithData(currentFormData) : showQuestionnaire();
 }
 
-/**
- * Retry with existing form data
- */
-async function handleFormSubmitWithData(formData) {
+async function handleFormSubmitWithData(data) {
     showLoading();
-    
     try {
-        const recommendations = await generateGiftRecommendations(formData);
-        displayResults(recommendations);
+        const recs = await generateGiftRecommendations(data);
+        displayResults(recs);
     } catch (err) {
-        console.error('Error on retry:', err);
+        console.error(err);
         showError(getErrorMessage(err));
     }
 }
 
-/**
- * Get user-friendly error message
- */
 function getErrorMessage(error) {
     const message = error.message.toLowerCase();
-    
-    if (message.includes('unauthorized') || message.includes('401')) {
-        return 'API key is invalid or missing. Please check your OpenRouter API key configuration.';
-    } else if (message.includes('quota') || message.includes('limit')) {
-        return 'API usage limit reached. Please try again later or check your OpenRouter account.';
-    } else if (message.includes('network') || message.includes('fetch')) {
-        return 'Network connection issue. Please check your internet connection and try again.';
-    } else if (message.includes('timeout')) {
-        return 'Request timed out. Please try again.';
-    } else if (message.includes('rate limit')) {
-        return 'Too many requests. Please wait a moment and try again.';
-    } else {
-        return `Unable to generate recommendations: ${error.message}. Please try again.`;
-    }
+    if (message.includes('unauthorized') || message.includes('401')) return 'API key is invalid or missing.';
+    if (message.includes('quota') || message.includes('limit')) return 'API usage limit reached.';
+    if (message.includes('network')) return 'Network error. Please check your internet.';
+    return `Error: ${error.message}`;
 }
 
-/**
- * Add loading state to submit button
- */
 function setButtonLoading(isLoading) {
     const btnText = submitBtn.querySelector('.btn-text');
     const btnIcon = submitBtn.querySelector('.btn-icon');
-    
-    if (isLoading) {
-        submitBtn.disabled = true;
-        btnText.textContent = 'Generating...';
-        btnIcon.style.display = 'none';
-    } else {
-        submitBtn.disabled = false;
-        btnText.textContent = 'Get Gift Recommendations';
-        btnIcon.style.display = 'block';
-    }
+    submitBtn.disabled = isLoading;
+    btnText.textContent = isLoading ? 'Generating...' : 'Get Gift Recommendations';
+    btnIcon.style.display = isLoading ? 'none' : 'block';
 }
-
-// Add loading state management to form submission
-const originalShowLoading = showLoading;
-showLoading = function() {
-    setButtonLoading(true);
-    originalShowLoading();
-};
-
-const originalShowResults = showResults;
-showResults = function() {
-    setButtonLoading(false);
-    originalShowResults();
-};
-
-const originalShowError = showError;
-showError = function(message) {
-    setButtonLoading(false);
-    originalShowError(message);
-};
