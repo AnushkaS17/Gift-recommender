@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AI Gift Recommender - Find the Perfect Gift</title>
+        <meta
+            name="description"
+            content="Get personalized gift recommendations powered by AI. Answer a few simple questions and discover perfect gifts for any occasion."
+        />
+        <link rel="stylesheet" href="styles.css" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css"
+        />
+    </head>
+    <body>
+        <div class="container">
+            <!-- Header Section -->
+            <header class="header">
+                <div class="logo">
+                    <svg
+                        width="32"
+                        height="32"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path
+                            d="M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6"
+                        ></path>
+                        <path d="M2 7l10-4 10 4"></path>
+                        <path d="M12 22V11"></path>
+                    </svg>
+                    <span>GiftAI</span>
+                </div>
+                <h1>AI-Powered Gift Recommendations</h1>
+                <p class="subtitle">
+                    Answer a few questions and discover the perfect gift for
+                    your loved ones
+                </p>
+            </header>
+
+            <!-- Questionnaire Form -->
+            <div id="questionnaire" class="questionnaire">
+                <form id="giftForm" class="gift-form">
+                    <div class="form-group">
+                        <label for="age">Recipient's Age</label>
+                        <select id="age" name="age" required>
+                            <option value="">Select age range</option>
+                            <option value="0-5">0-5 years (Toddler)</option>
+                            <option value="6-12">6-12 years (Child)</option>
+                            <option value="13-17">13-17 years (Teen)</option>
+                            <option value="18-25">
+                                18-25 years (Young Adult)
+                            </option>
+                            <option value="26-35">26-35 years (Adult)</option>
+                            <option value="36-50">
+                                36-50 years (Middle-aged)
+                            </option>
+                            <option value="51-65">
+                                51-65 years (Mature Adult)
+                            </option>
+                            <option value="65+">65+ years (Senior)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="occasion">Occasion</label>
+                        <select id="occasion" name="occasion" required>
+                            <option value="">Select occasion</option>
+                            <option value="birthday">Birthday</option>
+                            <option value="christmas">Christmas</option>
+                            <option value="anniversary">Anniversary</option>
+                            <option value="graduation">Graduation</option>
+                            <option value="wedding">Wedding</option>
+                            <option value="valentines">Valentine's Day</option>
+                            <option value="mothers-day">Mother's Day</option>
+                            <option value="fathers-day">Father's Day</option>
+                            <option value="housewarming">Housewarming</option>
+                            <option value="retirement">Retirement</option>
+                            <option value="just-because">Just Because</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="interests">Interests & Hobbies</label>
+                        <textarea
+                            id="interests"
+                            name="interests"
+                            placeholder="e.g., cooking, reading, photography, gaming, sports, music, art, technology..."
+                            rows="3"
+                            required
+                        ></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="relationship">Your Relationship</label>
+                        <select id="relationship" name="relationship" required>
+                            <option value="">Select relationship</option>
+                            <option value="spouse">Spouse/Partner</option>
+                            <option value="parent">Parent</option>
+                            <option value="child">Child</option>
+                            <option value="sibling">Sibling</option>
+                            <option value="friend">Friend</option>
+                            <option value="colleague">Colleague</option>
+                            <option value="extended-family">
+                                Extended Family
+                            </option>
+                            <option value="acquaintance">Acquaintance</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="budget">Budget Range</label>
+                        <select id="budget" name="budget" required>
+                            <option value="">Select budget</option>
+                            <option value="under-2000">Under ₹2,000</option>
+                            <option value="2000-4000">₹2,000 - ₹4,000</option>
+                            <option value="4000-8000">₹4,000 - ₹8,000</option>
+                            <option value="8000-20000">₹8,000 - ₹20,000</option>
+                            <option value="20000-40000">
+                                ₹20,000 - ₹40,000
+                            </option>
+                            <option value="40000-80000">
+                                ₹40,000 - ₹80,000
+                            </option>
+                            <option value="over-80000">Over ₹80,000</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        <span class="btn-text">Get Gift Recommendations</span>
+                        <svg
+                            class="btn-icon"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading" class="loading hidden">
+                <div class="loading-spinner"></div>
+                <h3>Finding Perfect Gifts...</h3>
+                <p>
+                    Our AI is analyzing your preferences to suggest the best
+                    gifts
+                </p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results" class="results hidden">
+                <div class="results-header">
+                    <h2>Perfect Gift Recommendations</h2>
+                    <p>
+                        Based on your preferences, here are our top suggestions:
+                    </p>
+                </div>
+                <div id="giftList" class="gift-list"></div>
+                <button id="newSearchBtn" class="secondary-btn">
+                    <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M1 4v6h6M23 20v-6h-6" />
+                        <path
+                            d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 014.51 15"
+                        />
+                    </svg>
+                    Find More Gifts
+                </button>
+            </div>
+
+            <!-- Error State -->
+            <div id="error" class="error hidden">
+                <div class="error-icon">
+                    <svg
+                        width="48"
+                        height="48"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="15" y1="9" x2="9" y2="15" />
+                        <line x1="9" y1="9" x2="15" y2="15" />
+                    </svg>
+                </div>
+                <h3>Something went wrong</h3>
+                <p id="errorMessage">
+                    We couldn't generate gift recommendations at this time.
+                    Please check your API key and try again.
+                </p>
+                <button id="retryBtn" class="submit-btn">Try Again</button>
+            </div>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <p>
+                    &copy; 2025 GiftAI. Powered by artificial intelligence for
+                    better gift giving.
+                </p>
+            </footer>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+        <script>
+            // Inject API key from environment variable
+            window.OPENROUTER_API_KEY = "{{ OPENROUTER_API_KEY }}";
+        </script>
+        <script src="script.js"></script>
+    </body>
+</html>
