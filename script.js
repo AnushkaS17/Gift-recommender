@@ -1,6 +1,6 @@
 // API Configuration
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const API_KEY = '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'; // direct key for testing
+const API_KEY = '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'; // direct key for testing
 
 // DOM Elements
 const form = document.getElementById('giftForm');
